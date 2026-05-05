@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
 	_ "subscription-service/docs"
 	"subscription-service/internal/config"
@@ -18,6 +24,19 @@ import (
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 )
+
+// customValidator адаптер для validator.v10, реализующий интерфейс binding.StructValidator
+type customValidator struct {
+	validate *validator.Validate
+}
+
+func (cv *customValidator) ValidateStruct(obj any) error {
+	return cv.validate.Struct(obj)
+}
+
+func (cv *customValidator) Engine() any {
+	return cv.validate
+}
 
 // @title Subscription Service API
 // @version 1.0
@@ -61,6 +80,10 @@ func main() {
 	router.Use(gin.Recovery())
 	router.Use(logging.GinLogger(logger))
 	router.Use(cors.Default())
+
+	// Устанавливаем validator.v10 как дефолтный валидатор для Gin
+	validate := validator.New()
+	binding.Validator = &customValidator{validate}
 
 	v1 := router.Group("/api/v1")
 	{
@@ -193,8 +216,45 @@ func main() {
 </html>`)
 	})
 
-	logger.Info("Сервер запускается", zap.String("port", cfg.Server.Port))
-	if err := router.Run(":" + cfg.Server.Port); err != nil {
+	// Настройка HTTP сервера с graceful shutdown
+	srv := &http.Server{
+		Addr:         ":" + cfg.Server.Port,
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  30 * time.Second,
+	}
+
+	// Канал для ошибок сервера
+	serverErr := make(chan error, 1)
+
+	// Запуск сервера в горутине
+	go func() {
+		logger.Info("Сервер запускается", zap.String("port", cfg.Server.Port))
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			serverErr <- err
+		}
+	}()
+
+	// Канал для сигналов ОС
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	// Ожидание сигнала или ошибки сервера
+	select {
+	case err := <-serverErr:
 		logger.Fatal("Ошибка запуска сервера", zap.Error(err))
+	case sig := <-quit:
+		logger.Info("Получен сигнал завершения", zap.String("signal", sig.String()))
+		logger.Info("Остановка сервера...")
+
+		// Таймаут graceful shutdown
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := srv.Shutdown(ctx); err != nil {
+			logger.Fatal("Принудительное завершение сервера", zap.Error(err))
+		}
+		logger.Info("Сервер успешно остановлен")
 	}
 }

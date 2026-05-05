@@ -31,6 +31,8 @@ func Connect(cfg config.DatabaseConfig) (*gorm.DB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("не удалось получить абсолютный путь миграций: %w", err)
 	}
+	// На Windows нужно заменить обратные слеши на прямые для file:// URL
+	absPath = filepath.ToSlash(absPath)
 	m, err := migrate.New("file://"+absPath, "postgres://"+cfg.User+":"+cfg.Password+"@"+cfg.Host+":"+cfg.Port+"/"+cfg.Name+"?sslmode="+cfg.SSLMode)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка инициализации миграций: %w", err)
