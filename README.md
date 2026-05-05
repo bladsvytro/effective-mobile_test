@@ -33,6 +33,8 @@ docker-compose up --build
 - `DELETE /api/v1/subscriptions/:id` – удалить подписку (мягкое удаление)
 - `GET    /api/v1/analytics/total` – суммарная стоимость за период
 
+> **Примечание:** Все запросы валидируются с помощью validator.v10. Сервер поддерживает graceful shutdown.
+
 Подробная документация: `http://localhost:8080/swagger/index.html`
 
 ## Миграции
