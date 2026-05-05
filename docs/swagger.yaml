@@ -61,6 +61,7 @@ definitions:
         type: string
       price:
         example: 500
+        minimum: 1
         type: integer
       service_name:
         example: Yandex Music
@@ -72,8 +73,8 @@ definitions:
 host: localhost:8080
 info:
   contact:
-    name: Effective Mobile
-    url: https://effective‑mobile.ru
+    name: Владислав Наумов
+    url: https://github.com/bladsvytro/effective-mobile_test
   description: REST-сервис для агрегации данных об онлайн подписках пользователей
   license:
     name: MIT
@@ -83,7 +84,9 @@ paths:
   /analytics/total:
     get:
       description: Возвращает суммарную стоимость всех подписок за выбранный период
-        с фильтрацией по пользователю и названию сервиса
+        с фильтрацией по пользователю и названию сервиса. Учитывается количество месяцев
+        активности подписки в пределах запрошенного периода (пересечение периодов).
+        Стоимость каждой подписки умножается на количество месяцев пересечения.
       parameters:
       - description: Начало периода (MM-YYYY)
         in: query

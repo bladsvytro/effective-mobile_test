@@ -41,8 +41,8 @@ func (cv *customValidator) Engine() any {
 // @title Subscription Service API
 // @version 1.0
 // @description REST-сервис для агрегации данных об онлайн подписках пользователей
-// @contact.name Effective Mobile
-// @contact.url https://effective‑mobile.ru
+// @contact.name Владислав Наумов
+// @contact.url https://github.com/bladsvytro/effective-mobile_test
 // @license.name MIT
 // @host localhost:8080
 // @BasePath /api/v1

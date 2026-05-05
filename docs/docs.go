@@ -10,8 +10,8 @@ const docTemplate = `{
         "description": "{{escape .Description}}",
         "title": "{{.Title}}",
         "contact": {
-            "name": "Effective Mobile",
-            "url": "https://effective‑mobile.ru"
+            "name": "Владислав Наумов",
+            "url": "https://github.com/bladsvytro/effective-mobile_test"
         },
         "license": {
             "name": "MIT"
@@ -23,7 +23,7 @@ const docTemplate = `{
     "paths": {
         "/analytics/total": {
             "get": {
-                "description": "Возвращает суммарную стоимость всех подписок за выбранный период с фильтрацией по пользователю и названию сервиса",
+                "description": "Возвращает суммарную стоимость всех подписок за выбранный период с фильтрацией по пользователю и названию сервиса. Учитывается количество месяцев активности подписки в пределах запрошенного периода (пересечение периодов). Стоимость каждой подписки умножается на количество месяцев пересечения.",
                 "produces": [
                     "application/json"
                 ],
@@ -387,6 +387,7 @@ const docTemplate = `{
                 },
                 "price": {
                     "type": "integer",
+                    "minimum": 1,
                     "example": 500
                 },
                 "service_name": {
